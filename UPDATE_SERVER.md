@@ -38,7 +38,7 @@ cd /path/to/DGC_IMS
    - Location: `/var/backups/dgc-ims-deployments/`
 
 ### 3. **Git Update**
-   - Stops running containers with `docker-compose down`
+   - Stops running containers with `docker compose down` (or `docker-compose down` fallback)
    - Fetches latest changes from `https://github.com/dsitservicesja-lab/DGC_IMS.git`
    - Pulls to `main` branch
 
@@ -48,18 +48,17 @@ cd /path/to/DGC_IMS
    - Preserves original as `.bak`
 
 ### 5. **Build**
-   - Installs npm dependencies
-   - Builds API: `npm --workspace @dgc-ims/api run build`
-   - Builds Web: `npm --workspace @dgc-ims/web run build`
-   - Compiles Docker images
+   - Builds Docker images with Compose
+   - Uses containerized build workflow (no host npm required)
 
 ### 6. **Database**
    - Starts PostgreSQL container
-   - Waits for database readiness (10s)
-   - Runs Prisma migrations: `npm run db:migrate`
+   - Waits for database readiness using `pg_isready`
+   - Runs Prisma migrations in container: `docker compose run --rm api npx prisma migrate deploy`
+   - Automatically rewrites migration `DATABASE_URL` host from `localhost` to `db` when needed
 
 ### 7. **Deployment**
-   - Starts all services with `docker-compose up -d`
+   - Starts all services with `docker compose up -d`
    - Waits for container initialization
    - Performs health check on API (`/api/health`)
    - Max 30 attempts with 2-second intervals
@@ -140,9 +139,9 @@ tail -f /var/log/dgc-ims-update-*.log
 - Backups available for manual recovery
 
 ### Database Issues
-- Waits 10 seconds for PostgreSQL startup
-- Non-blocking: script continues even if no pending migrations
-- Manual rollback: Use backed-up `.sql` file
+- Waits for PostgreSQL readiness with retries before migration
+- Stops immediately if migration fails
+- Manual rollback: Restore from deployment backup and re-run update
 
 ## Rollback Procedure
 
@@ -158,8 +157,8 @@ sudo cp -r $BACKUP_PATH/app_backup /workspaces/DGC_IMS
 ### 2. **Restart Services**
 ```bash
 cd /workspaces/DGC_IMS
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ### 3. **Verify Health**
@@ -296,7 +295,7 @@ npm run db:status
 
 View migration logs:
 ```bash
-docker-compose logs db
+docker compose logs db
 ```
 
 Manual migration:
@@ -352,5 +351,5 @@ LOG_LEVEL=info
 For issues or questions:
 - Check logs: `/var/log/dgc-ims-update-*.log`
 - View backups: `/var/backups/dgc-ims-deployments/`
-- Review docker-compose: Check `docker-compose logs` for service errors
+- Review services: Check `docker compose logs` for service errors
 - GitHub Issues: https://github.com/dsitservicesja-lab/DGC_IMS/issues

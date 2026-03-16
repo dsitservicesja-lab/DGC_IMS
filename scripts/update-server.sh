@@ -2,7 +2,7 @@
 # DGC IMS Server Update Script
 # Pulls latest changes from GitHub and redeploys with custom port
 
-set -e
+set -Eeuo pipefail
 
 # Configuration
 REPO_URL="https://github.com/dsitservicesja-lab/DGC_IMS.git"
@@ -36,6 +36,76 @@ log_warn() {
   echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] ⚠ $1${NC}" | tee -a "$LOG_FILE"
 }
 
+on_error() {
+  local line="$1"
+  log_error "Update failed at line ${line}. Check log: $LOG_FILE"
+}
+
+trap 'on_error $LINENO' ERR
+
+require_cmd() {
+  local command_name="$1"
+  local install_hint="$2"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    log_error "Required command not found: $command_name"
+    log_error "$install_hint"
+    exit 1
+  fi
+}
+
+detect_compose() {
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE_BIN=(docker compose)
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_BIN=(docker-compose)
+    return 0
+  fi
+
+  log_warn "Docker Compose not found. Attempting to install docker-compose-plugin..."
+  if command -v apt-get >/dev/null 2>&1; then
+    apt-get update 2>&1 | tee -a "$LOG_FILE"
+    apt-get install -y docker-compose-plugin 2>&1 | tee -a "$LOG_FILE" || true
+  else
+    log_warn "apt-get not available; cannot auto-install docker-compose-plugin"
+  fi
+
+  if docker compose version >/dev/null 2>&1; then
+    COMPOSE_BIN=(docker compose)
+    log_success "Installed docker-compose-plugin successfully"
+    return 0
+  fi
+
+  if command -v docker-compose >/dev/null 2>&1; then
+    COMPOSE_BIN=(docker-compose)
+    return 0
+  fi
+
+  log_error "Neither 'docker compose' nor 'docker-compose' is available"
+  log_error "Install Docker Compose plugin: sudo apt-get install -y docker-compose-plugin"
+  exit 1
+}
+
+compose() {
+  "${COMPOSE_BIN[@]}" "$@"
+}
+
+read_env_value() {
+  local key="$1"
+  local file="$2"
+
+  local raw
+  raw=$(grep -E "^${key}=" "$file" | tail -1 | cut -d= -f2- || true)
+  raw="${raw%\"}"
+  raw="${raw#\"}"
+  raw="${raw%\'}"
+  raw="${raw#\'}"
+  echo "$raw"
+}
+
 # Header
 echo "════════════════════════════════════════════════════════════════"
 echo "  DGC IMS Server Update Script"
@@ -45,6 +115,14 @@ log "Repository: $REPO_URL"
 log "App directory: $APP_DIR"
 log "Custom port: $CUSTOM_PORT"
 log "Log file: $LOG_FILE"
+
+# Preflight checks
+require_cmd git "Install Git first (Ubuntu: sudo apt-get install -y git)"
+require_cmd docker "Install Docker first (or run scripts/bootstrap-server.sh)"
+require_cmd curl "Install curl first (Ubuntu: sudo apt-get install -y curl)"
+require_cmd sed "Install sed first (Ubuntu: sudo apt-get install -y sed)"
+detect_compose
+log_success "Preflight checks passed"
 
 # Verify we're in the right directory
 if [ ! -f "$APP_DIR/docker-compose.yml" ]; then
@@ -76,7 +154,9 @@ log_success "Backup created at: $BACKUP_PATH"
 # Stop current services
 log "Stopping current services..."
 cd "$APP_DIR"
-docker-compose down 2>&1 | tee -a "$LOG_FILE" || log_warn "docker-compose down returned a warning (may be normal)"
+if ! compose down 2>&1 | tee -a "$LOG_FILE"; then
+  log_warn "Compose down returned a warning (continuing)"
+fi
 log_success "Services stopped"
 
 # Pull latest code from GitHub
@@ -136,35 +216,9 @@ fi
 
 log_success ".env configuration verified"
 
-# Install dependencies
-log "Installing dependencies..."
-cd "$APP_DIR"
-npm install 2>&1 | tee -a "$LOG_FILE" || {
-  log_error "npm install failed"
-  exit 1
-}
-log_success "Dependencies installed"
-
-# Build applications
-log "Building applications..."
-
-log "Building API..."
-npm --workspace @dgc-ims/api run build 2>&1 | tee -a "$LOG_FILE" || {
-  log_error "API build failed"
-  exit 1
-}
-log_success "API build completed"
-
-log "Building Web..."
-npm --workspace @dgc-ims/web run build 2>&1 | tee -a "$LOG_FILE" || {
-  log_error "Web build failed"
-  exit 1
-}
-log_success "Web build completed"
-
 # Build Docker images
 log "Building Docker images..."
-docker-compose build 2>&1 | tee -a "$LOG_FILE" || {
+compose build 2>&1 | tee -a "$LOG_FILE" || {
   log_error "Docker build failed"
   exit 1
 }
@@ -172,20 +226,49 @@ log_success "Docker images built"
 
 # Run database migrations
 log "Running database migrations..."
-docker-compose up -d db 2>&1 | tee -a "$LOG_FILE"
+compose up -d db 2>&1 | tee -a "$LOG_FILE"
 
 # Wait for database to be ready
 log "Waiting for database to be ready..."
-sleep 10
+DB_READY=false
+for attempt in $(seq 1 30); do
+  if compose exec -T db pg_isready -U gov_chem_inv -d gov_chem_inv >/dev/null 2>&1; then
+    DB_READY=true
+    break
+  fi
+  sleep 2
+done
 
-cd "$APP_DIR/apps/api"
-npm run db:migrate 2>&1 | tee -a "$LOG_FILE" || log_warn "Database migration completed (may have no pending migrations)"
+if [ "$DB_READY" != "true" ]; then
+  log_error "Database did not become ready in time"
+  compose logs db 2>&1 | tee -a "$LOG_FILE" | tail -50 || true
+  exit 1
+fi
+
+MIGRATION_DATABASE_URL=$(read_env_value "DATABASE_URL" "$APP_DIR/.env")
+if [ -n "$MIGRATION_DATABASE_URL" ]; then
+  MIGRATION_DATABASE_URL="${MIGRATION_DATABASE_URL//localhost/db}"
+  MIGRATION_DATABASE_URL="${MIGRATION_DATABASE_URL//127.0.0.1/db}"
+fi
+
+if [ -n "$MIGRATION_DATABASE_URL" ]; then
+  compose run --rm -e DATABASE_URL="$MIGRATION_DATABASE_URL" api npx prisma migrate deploy 2>&1 | tee -a "$LOG_FILE" || {
+    log_error "Database migration failed"
+    exit 1
+  }
+else
+  compose run --rm api npx prisma migrate deploy 2>&1 | tee -a "$LOG_FILE" || {
+    log_error "Database migration failed"
+    exit 1
+  }
+fi
+
 log_success "Database migrations applied"
 
 # Start all services
 log "Starting services on port $CUSTOM_PORT..."
 cd "$APP_DIR"
-docker-compose up -d 2>&1 | tee -a "$LOG_FILE"
+compose up -d 2>&1 | tee -a "$LOG_FILE"
 
 # Wait for services to be healthy
 log "Waiting for services to become healthy..."
@@ -212,7 +295,7 @@ done
 if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
   log_error "API failed health check after $MAX_ATTEMPTS attempts"
   log "Checking Docker logs..."
-  docker-compose logs api 2>&1 | tee -a "$LOG_FILE" | tail -30
+  compose logs api 2>&1 | tee -a "$LOG_FILE" | tail -30 || true
   exit 1
 fi
 
@@ -238,7 +321,7 @@ echo "════════════════════════�
 
 # Show docker-compose status
 log "Current service status:"
-docker-compose ps 2>&1 | tee -a "$LOG_FILE"
+compose ps 2>&1 | tee -a "$LOG_FILE"
 
 echo ""
 log_success "Update finished at $(date '+%Y-%m-%d %H:%M:%S')"

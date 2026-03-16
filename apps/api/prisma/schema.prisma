@@ -117,6 +117,14 @@ enum TransactionType {
   WRITE_DOWN
 }
 
+enum ApprovalLevel {
+  NONE
+  DUTY_OFFICER
+  SENIOR_OFFICER
+  DIRECTOR
+  FINANCIAL_SECRETARY
+}
+
 model User {
   id              String    @id @default(cuid())
   employeeId      String    @unique
@@ -372,6 +380,19 @@ model Delegation {
   endsAt         DateTime
   status         String
   createdAt      DateTime @default(now())
+}
+
+model ApprovalMatrixRule {
+  id                String              @id @default(cuid())
+  name              String
+  valueThreshold    Decimal?            @db.Decimal(14, 2)
+  approvalLevel     ApprovalLevel
+  approverRoles     String[]
+  transactionType   TransactionType?
+  inventoryClass    String?
+  active            Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model DocumentRecord {

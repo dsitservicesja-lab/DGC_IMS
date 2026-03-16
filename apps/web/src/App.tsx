@@ -2,6 +2,14 @@ import { useMemo, useState } from "react";
 import { KpiCard } from "./components/KpiCard";
 import { DataTable } from "./components/DataTable";
 import { QuickActions } from "./components/QuickActions";
+import { RequisitionForm } from "./components/RequisitionForm";
+import { ReceivingForm } from "./components/ReceivingForm";
+import { IssueForm } from "./components/IssueForm";
+import { TransferForm } from "./components/TransferForm";
+import { AdjustmentForm } from "./components/AdjustmentForm";
+import { DisposalForm } from "./components/DisposalForm";
+import { TransactionList } from "./components/TransactionList";
+import { ToastProvider, useToast } from "./components/Toast";
 
 type Kpis = {
   stockAccuracyPercent: number;
@@ -33,8 +41,12 @@ const sampleAlerts = [
   { alert: "Audit exception", item: "Controlled Stationery", severity: "High", due: "Review open" }
 ];
 
-export function App() {
+type ActiveForm = "requisition" | "receiving" | "issue" | "transfer" | "adjustment" | "disposal" | null;
+
+function AppContent() {
   const [kpis, setKpis] = useState<Kpis>(sampleKpis);
+  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
+  const toast = useToast();
 
   const kpiCards = useMemo(
     () => [
@@ -55,6 +67,12 @@ export function App() {
     }));
   };
 
+  const handleFormSuccess = (formName: string) => {
+    toast.add(`${formName} submitted successfully`, "success");
+    setActiveForm(null);
+    onRefresh();
+  };
+
   return (
     <div className="app-shell">
       <header className="masthead">
@@ -69,7 +87,53 @@ export function App() {
         <div className="security-pill">MFA protected | Full audit trail | Segregation of duties</div>
       </header>
 
-      <QuickActions onRefresh={onRefresh} />
+      <div className="quick-actions">
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("requisition")}
+          type="button"
+        >
+          + Create Requisition
+        </button>
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("receiving")}
+          type="button"
+        >
+          + Receive Goods
+        </button>
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("issue")}
+          type="button"
+        >
+          + Issue Stock
+        </button>
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("transfer")}
+          type="button"
+        >
+          + Transfer Stock
+        </button>
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("adjustment")}
+          type="button"
+        >
+          + Adjust Stock
+        </button>
+        <button
+          className="action action-primary"
+          onClick={() => setActiveForm("disposal")}
+          type="button"
+        >
+          + Dispose Item
+        </button>
+        <button className="action action-secondary" onClick={onRefresh} type="button">
+          🔄 Refresh Dashboard
+        </button>
+      </div>
 
       <section className="kpi-grid">
         {kpiCards.map((card) => (
@@ -82,6 +146,8 @@ export function App() {
         <DataTable title="Compliance Alerts" rows={sampleAlerts} />
       </section>
 
+      <TransactionList />
+
       <section className="policy-panel">
         <h2>Jamaica Public Sector Control Coverage</h2>
         <div className="policy-tags">
@@ -93,6 +159,51 @@ export function App() {
           <span>Immutable Audit Evidence</span>
         </div>
       </section>
+
+      {activeForm === "requisition" && (
+        <RequisitionForm
+          onSuccess={() => handleFormSuccess("Requisition")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
+      {activeForm === "receiving" && (
+        <ReceivingForm
+          onSuccess={() => handleFormSuccess("Receipt")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
+      {activeForm === "issue" && (
+        <IssueForm
+          onSuccess={() => handleFormSuccess("Issue")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
+      {activeForm === "transfer" && (
+        <TransferForm
+          onSuccess={() => handleFormSuccess("Transfer")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
+      {activeForm === "adjustment" && (
+        <AdjustmentForm
+          onSuccess={() => handleFormSuccess("Adjustment")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
+      {activeForm === "disposal" && (
+        <DisposalForm
+          onSuccess={() => handleFormSuccess("Disposal")}
+          onCancel={() => setActiveForm(null)}
+        />
+      )}
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }

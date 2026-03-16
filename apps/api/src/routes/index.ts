@@ -5,6 +5,7 @@ import { requisitionRouter } from "./requisitions.routes.js";
 import { transactionRouter } from "./transactions.routes.js";
 import { reportRouter } from "./reports.routes.js";
 import { disposalRouter } from "./disposal.routes.js";
+import approvalMatrixRouter from "./approval-matrix.routes.js";
 
 export const appRouter = Router();
 
@@ -18,3 +19,4 @@ appRouter.use("/requisitions", requisitionRouter);
 appRouter.use("/transactions", transactionRouter);
 appRouter.use("/disposals", disposalRouter);
 appRouter.use("/reports", reportRouter);
+appRouter.use("/approval-matrix", approvalMatrixRouter);

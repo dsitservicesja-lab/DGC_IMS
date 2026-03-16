@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ACCOUNTING_OFFICER
+  ASSET_MANAGER
+  STOREKEEPER
+  REQUISITIONING_OFFICER
+  RECEIVING_OFFICER
+  APPROVING_OFFICER
+  PROCUREMENT_OFFICER
+  FINANCE_OFFICER
+  DISPOSAL_AUTHORITY
+  INTERNAL_AUDITOR
+  SYSTEM_ADMIN
+  CUSTODIAN
+}
+
+enum DocumentType {
+  REQUISITION
+  PURCHASE_ORDER
+  GOODS_RECEIVED_NOTE
+  INSPECTION_REPORT
+  STOCK_ISSUE_VOUCHER
+  TRANSFER_NOTE
+  ADJUSTMENT_NOTE
+  STOCK_COUNT_SHEET
+  VARIANCE_REPORT
+  QUARANTINE_NOTE
+  DISPOSAL_FORM
+  RETURN_TO_SUPPLIER
+  DONATION_ACCEPTANCE
+  INCIDENT_REPORT
+}
+
+enum InventoryClass {
+  CONSUMABLES
+  OFFICE_SUPPLIES
+  CLEANING_SUPPLIES
+  LABORATORY_SUPPLIES
+  CHEMICALS_REAGENTS
+  PPE_SAFETY
+  SPARE_PARTS
+  MAINTENANCE_STOCK
+  UNIFORMS
+  IT_CONSUMABLES
+  CONTROLLED_STATIONERY
+  GOODS_FOR_DISTRIBUTION
+  GOODS_FOR_RESALE
+  WORK_IN_PROGRESS
+}
+
+enum CriticalityClass {
+  CRITICAL
+  ESSENTIAL
+  ROUTINE
+  OBSOLETE_PENDING_DISPOSAL
+  QUARANTINED
+}
+
+enum RiskClass {
+  HIGH_VALUE
+  CONTROLLED
+  HAZARDOUS
+  EXPIRY_SENSITIVE
+  SERIALIZED
+  REGULATED
+  DONATED
+  EMERGENCY_RESERVE
+}
+
+enum AccountingClass {
+  EXCHANGE_PURCHASED
+  NON_EXCHANGE_DONATION
+  NOMINAL_DISTRIBUTION
+  WRITE_DOWN_CANDIDATE
+  DAMAGED_LOST_SHRINKAGE
+  DISPOSAL_STOCK
+}
+
+enum ItemStatus {
+  ACTIVE
+  BLOCKED
+  OBSOLETE
+  QUARANTINED
+  DISPOSAL
+}
+
+enum ApprovalStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ValuationMethod {
+  WEIGHTED_AVERAGE
+  FIFO
+  SPECIFIC_IDENTIFICATION
+}
+
+enum TransactionType {
+  RECEIPT
+  ISSUE
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT_GAIN
+  ADJUSTMENT_LOSS
+  DISPOSAL
+  WRITE_DOWN
+}
+
+model User {
+  id              String    @id @default(cuid())
+  employeeId      String    @unique
+  name            String
+  email           String    @unique
+  passwordHash    String
+  role            UserRole
+  department      String
+  approvalLevel   Int       @default(1)
+  mfaEnabled      Boolean   @default(false)
+  loginMethod     String    @default("LOCAL")
+  activeFrom      DateTime
+  activeTo        DateTime?
+  isActive        Boolean   @default(true)
+  locationId      String?
+  location        Location? @relation(fields: [locationId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  createdRequisitions Requisition[] @relation("RequisitionRequester")
+  approvedRequisitions Requisition[] @relation("RequisitionApprover")
+  auditLogs AuditLog[]
+}
+
+model Location {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  site            String
+  building        String
+  floor           String?
+  room            String?
+  bin             String?
+  securityLevel   String
+  tempRequirement String?
+  humidityReq     String?
+  capacity        Int?
+  isActive        Boolean  @default(true)
+  custodianId     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items     StockBalance[]
+  users     User[]
+  requisitions Requisition[]
+  receipts GoodsReceipt[]
+}
+
+model InventoryItem {
+  id                          String          @id @default(cuid())
+  itemCode                    String          @unique
+  standardName                String
+  description                 String
+  category                    InventoryClass
+  subcategory                 String?
+  unitOfMeasure               String
+  packSize                    String?
+  sku                         String?
+  barcode                     String?
+  manufacturer                String?
+  brand                       String?
+  model                       String?
+  partNumber                  String?
+  serialNumberFlag            Boolean         @default(false)
+  batchNumberFlag             Boolean         @default(false)
+  expiryDateFlag              Boolean         @default(false)
+  hazardClassFlag             Boolean         @default(false)
+  storageCondition            String?
+  contractReference           String?
+  procurementMethodReference  String?
+  reorderLevel                Int             @default(0)
+  reorderQuantity             Int             @default(0)
+  minLevel                    Int             @default(0)
+  maxLevel                    Int             @default(0)
+  safetyStock                 Int             @default(0)
+  leadTimeDays                Int             @default(0)
+  economicOrderQty            Int?
+  standardCost                Decimal         @db.Decimal(14, 2)
+  lastCost                    Decimal?        @db.Decimal(14, 2)
+  averageCost                 Decimal         @db.Decimal(14, 2)
+  valuationMethod             ValuationMethod @default(WEIGHTED_AVERAGE)
+  fundingSource               String?
+  programCode                 String?
+  glCode                      String?
+  status                      ItemStatus      @default(ACTIVE)
+  issuePolicy                 String          @default("UNRESTRICTED")
+  shelfLifeDays               Int?
+  inspectionRequired          Boolean         @default(false)
+  receivingTolerancePercent   Int             @default(0)
+  assetInventoryBoundaryFlag  Boolean         @default(false)
+  criticalityClass            CriticalityClass @default(ROUTINE)
+  riskClass                   RiskClass?
+  accountingClass             AccountingClass @default(EXCHANGE_PURCHASED)
+  isDonated                   Boolean         @default(false)
+  currentReplacementCost      Decimal?        @db.Decimal(14, 2)
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+
+  stockBalances      StockBalance[]
+  stockTransactions  StockTransaction[]
+  requisitions       Requisition[]
+  receipts           GoodsReceipt[]
+  disposals          DisposalRecord[]
+}
+
+model StockBalance {
+  id             String        @id @default(cuid())
+  itemId         String
+  locationId     String
+  quantityOnHand Int           @default(0)
+  quantityReserved Int         @default(0)
+  quantityQuarantine Int       @default(0)
+  quantityDisposed Int         @default(0)
+  lastVerifiedAt DateTime?
+  updatedAt      DateTime      @updatedAt
+
+  item           InventoryItem @relation(fields: [itemId], references: [id])
+  location       Location      @relation(fields: [locationId], references: [id])
+
+  @@unique([itemId, locationId])
+}
+
+model Requisition {
+  id                     String         @id @default(cuid())
+  reqNumber              String         @unique
+  requesterId            String
+  approverId             String?
+  itemId                 String
+  quantity               Int
+  costCentre             String
+  intendedUse            String
+  urgency                String
+  justification          String
+  destinationLocationId  String
+  emergencyFlag          Boolean        @default(false)
+  emergencyReasonCode    String?
+  status                 ApprovalStatus @default(DRAFT)
+  duplicateFlag          Boolean        @default(false)
+  excessiveFlag          Boolean        @default(false)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  requester              User           @relation("RequisitionRequester", fields: [requesterId], references: [id])
+  approver               User?          @relation("RequisitionApprover", fields: [approverId], references: [id])
+  item                   InventoryItem  @relation(fields: [itemId], references: [id])
+  destinationLocation    Location       @relation(fields: [destinationLocationId], references: [id])
+}
+
+model PurchaseOrder {
+  id                       String   @id @default(cuid())
+  poNumber                 String   @unique
+  requisitionId            String?
+  procurementMethod        String
+  supplierName             String
+  contractReference        String?
+  taxComplianceStatus      String?
+  approvedBy               String
+  approvedAt               DateTime
+  fsApprovalRequired       Boolean  @default(false)
+  fsApprovalReference      String?
+  status                   String
+  createdAt                DateTime @default(now())
+}
+
+model GoodsReceipt {
+  id                       String   @id @default(cuid())
+  grnNumber                String   @unique
+  poNumber                 String?
+  donorSource              String?
+  itemId                   String
+  receivedLocationId       String
+  quantityOrdered          Int
+  quantityReceived         Int
+  quantityAccepted         Int
+  quantityRejected         Int
+  quantityDamaged          Int
+  lotBatchNumber           String?
+  serialNumber             String?
+  expiryDate               DateTime?
+  manufacturerDate         DateTime?
+  inspectionResult         String
+  quarantineRequired       Boolean  @default(false)
+  fairValue                Decimal? @db.Decimal(14, 2)
+  valuationBasis           String?
+  receivedById             String
+  receivedAt               DateTime @default(now())
+
+  item                     InventoryItem @relation(fields: [itemId], references: [id])
+  receivedLocation         Location @relation(fields: [receivedLocationId], references: [id])
+}
+
+model StockTransaction {
+  id                 String          @id @default(cuid())
+  transactionNumber  String          @unique
+  type               TransactionType
+  itemId             String
+  fromLocationId     String?
+  toLocationId       String?
+  quantity           Int
+  unitCost           Decimal?        @db.Decimal(14, 2)
+  totalCost          Decimal?        @db.Decimal(14, 2)
+  reasonCode         String?
+  linkedDocumentId   String?
+  performedById      String
+  approvedById       String?
+  fsApprovalRef      String?
+  createdAt          DateTime        @default(now())
+
+  item               InventoryItem   @relation(fields: [itemId], references: [id])
+}
+
+model DisposalRecord {
+  id                     String   @id @default(cuid())
+  disposalNumber         String   @unique
+  itemId                 String
+  quantity               Int
+  method                 String
+  surveyRecordReference  String
+  recommendation         String
+  authorityApprovalRef   String
+  proceeds               Decimal? @db.Decimal(14, 2)
+  evidenceAttachment     String?
+  status                 String
+  createdAt              DateTime @default(now())
+
+  item                   InventoryItem @relation(fields: [itemId], references: [id])
+}
+
+model AuditLog {
+  id                String   @id @default(cuid())
+  action            String
+  entityType        String
+  entityId          String
+  beforeValue       String?
+  afterValue        String?
+  reasonCode        String?
+  linkedDocument    String?
+  approvalReference String?
+  userId            String
+  role              String
+  ipAddress         String?
+  sessionId         String?
+  createdAt         DateTime @default(now())
+
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Delegation {
+  id             String   @id @default(cuid())
+  fromUserId     String
+  toUserId       String
+  scope          String
+  startsAt       DateTime
+  endsAt         DateTime
+  status         String
+  createdAt      DateTime @default(now())
+}
+
+model DocumentRecord {
+  id               String       @id @default(cuid())
+  documentNumber   String       @unique
+  documentType     DocumentType
+  version          Int          @default(1)
+  status           String
+  approvedAt       DateTime?
+  approvedBy       String?
+  immutableHash    String
+  createdAt        DateTime     @default(now())
+}

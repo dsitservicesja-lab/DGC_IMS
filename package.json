@@ -1,0 +1,22 @@
+{
+  "name": "dgc-ims",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:api dev:web",
+    "dev:api": "npm --workspace @dgc-ims/api run dev",
+    "dev:web": "npm --workspace @dgc-ims/web run dev",
+    "build": "npm-run-all build:api build:web",
+    "build:api": "npm --workspace @dgc-ims/api run build",
+    "build:web": "npm --workspace @dgc-ims/web run build",
+    "db:migrate": "npm --workspace @dgc-ims/api run db:migrate",
+    "db:seed": "npm --workspace @dgc-ims/api run db:seed"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

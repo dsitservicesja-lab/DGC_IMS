@@ -76,6 +76,14 @@ Seed login users are created in apps/api/prisma/seed.ts with password ChangeMe12
 
 4. Access the deployed web UI on port 8080. The browser reaches the API through `/api` on the same host.
 
+If a server deployment is broken and you want a clean restart of the containers before redeploying:
+
+	bash scripts/redeploy-clean.sh 8084
+
+To also wipe the PostgreSQL Docker volume and start with an empty database:
+
+	bash scripts/redeploy-clean.sh 8084 --wipe-data
+
 ## Suggested hardening before production go-live
 
 - ✅ Replace default JWT secret and database credentials

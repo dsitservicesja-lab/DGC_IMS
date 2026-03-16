@@ -5,7 +5,7 @@
 set -e
 
 BACKUP_FILE="${1:-}"
-TEST_DB_NAME="dgc_ims_test_restore"
+TEST_DB_NAME="gov_chem_inv_test_restore"
 TEST_DB_HOST="${DATABASE_HOST:-localhost}"
 TEST_DB_PORT="${DATABASE_PORT:-5432}"
 TEST_DB_USER="${DATABASE_USER:-dgc_ims}"

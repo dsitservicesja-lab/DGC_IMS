@@ -310,7 +310,7 @@ npx prisma migrate resolve --applied <migration_name>
 Ensure `.env` contains:
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@db:5432/dgc_ims
+DATABASE_URL=postgresql://user:password@db:5432/gov_chem_inv
 
 # API
 API_PORT=4000

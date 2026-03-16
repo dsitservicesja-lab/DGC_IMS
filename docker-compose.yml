@@ -3,12 +3,12 @@ version: "3.9"
 services:
   db:
     image: postgres:16
-    container_name: dgc_ims_db
+    container_name: gov_chem_inv_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dgc_ims
-      POSTGRES_USER: dgc_ims
-      POSTGRES_PASSWORD: dgc_ims
+      POSTGRES_DB: gov_chem_inv
+      POSTGRES_USER: gov_chem_inv
+      POSTGRES_PASSWORD: gov_chem_inv
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: dgc_ims_api
+    container_name: gov_chem_inv_api
     restart: unless-stopped
     env_file:
       - .env
@@ -33,7 +33,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_BASE_URL: http://localhost:4000
-    container_name: dgc_ims_web
+    container_name: gov_chem_inv_web
     restart: unless-stopped
     depends_on:
       - api

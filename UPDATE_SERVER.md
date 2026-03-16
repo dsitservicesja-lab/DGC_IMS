@@ -84,8 +84,8 @@ cd /path/to/DGC_IMS
 ════════════════════════════════════════════════════════════════
 
 ✓ Web UI: http://localhost:8084
-✓ API: http://localhost:4000/api
-✓ Health check: http://localhost:4000/api/health
+✓ API via web: http://localhost:8084/api
+✓ Health check: http://localhost:8084/api/health
 
 Updated from: abc1234 → def5678
 Backup location: /var/backups/dgc-ims-deployments/backup_abc1234_20260316_172745
@@ -111,14 +111,14 @@ tail -f /var/log/dgc-ims-update-*.log
 ./scripts/update-server.sh 9000
 
 # Web UI accessible at http://localhost:9000
-# API still on port 4000 (internal)
+# API accessible at http://localhost:9000/api
 ```
 
 ### Port Mapping Reference
 | Service | Container Port | Host Port | Notes |
 |---------|---|---|---|
-| Web (nginx) | 80 | 8084 (custom) | Updated by script |
-| API (Express) | 4000 | 4000 | Internal only |
+| Web (nginx) | 80 | 8084 (custom) | Updated by script; proxies `/api` to backend |
+| API (Express) | 4000 | 4000 | Optional direct access; browser traffic should use proxied `/api` |
 | DB (PostgreSQL) | 5432 | 5432 | Internal only |
 
 ## Error Handling
@@ -164,7 +164,7 @@ docker compose up -d
 ### 3. **Verify Health**
 ```bash
 curl http://localhost:8084
-curl http://localhost:4000/api/health
+curl http://localhost:8084/api/health
 ```
 
 ## Scheduling Automated Updates

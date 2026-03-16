@@ -1,5 +1,5 @@
 export const apiClient = {
-  baseURL: (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:4000/api",
+  baseURL: (import.meta as any).env?.VITE_API_BASE_URL || "/api",
 
   async request(method: string, path: string, body?: unknown) {
     const token = localStorage.getItem("auth_token");

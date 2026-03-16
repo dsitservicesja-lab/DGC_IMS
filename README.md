@@ -55,6 +55,8 @@ Detailed mapping is available in docs/compliance-mapping.md.
 - API: http://localhost:4000/api/health
 - Web: http://localhost:5173
 
+The frontend uses `/api` by default. In local development Vite proxies `/api` to port 4000, and in Docker deployments the web container proxies `/api` to the API container.
+
 Seed login users are created in apps/api/prisma/seed.ts with password ChangeMe123!.
 
 ## Deploy on your server
@@ -66,13 +68,13 @@ Seed login users are created in apps/api/prisma/seed.ts with password ChangeMe12
 2. Configure environment:
 
 	cp .env.example .env
-	# edit production secrets and allowed origin
+	# edit production secrets, set DATABASE_URL host to db, and update allowed origin
 
 3. Deploy stack:
 
 	bash scripts/deploy.sh
 
-4. Access deployed web UI on port 8080 and API on port 4000.
+4. Access the deployed web UI on port 8080. The browser reaches the API through `/api` on the same host.
 
 ## Suggested hardening before production go-live
 

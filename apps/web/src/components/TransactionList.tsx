@@ -4,10 +4,12 @@ import { useToast } from "./Toast";
 
 type Transaction = {
   id: string;
+  transactionNumber: string;
   type: string;
   itemId: string;
+  item?: { description: string };
   quantity: number;
-  status: string;
+  reasonCode?: string;
   createdAt: string;
 };
 
@@ -53,27 +55,29 @@ export function TransactionList() {
         <table>
           <thead>
             <tr>
+              <th>Tx #</th>
               <th>Type</th>
               <th>Item</th>
               <th>Quantity</th>
-              <th>Status</th>
+              <th>Reason</th>
               <th>Date</th>
             </tr>
           </thead>
           <tbody>
             {transactions.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>
+                <td colSpan={6} style={{ textAlign: "center", padding: "20px" }}>
                   No transactions yet
                 </td>
               </tr>
             ) : (
               transactions.map((t) => (
                 <tr key={t.id}>
+                  <td>{t.transactionNumber}</td>
                   <td>{t.type}</td>
-                  <td>{t.itemId}</td>
+                  <td>{t.item?.description ?? t.itemId}</td>
                   <td>{t.quantity}</td>
-                  <td>{t.status}</td>
+                  <td>{t.reasonCode ?? "—"}</td>
                   <td>{new Date(t.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))

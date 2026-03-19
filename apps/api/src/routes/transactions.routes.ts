@@ -16,6 +16,23 @@ import { AppError } from "../utils/errors.js";
 export const transactionRouter = Router();
 transactionRouter.use(requireAuth);
 
+/* ── GET /transactions ── list recent stock transactions ── */
+transactionRouter.get("/", async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const transactions = await prisma.stockTransaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        item: { select: { description: true } },
+      },
+    });
+    res.json(transactions);
+  } catch (error) {
+    next(error);
+  }
+});
+
 const receivingSchema = z.object({
   poNumber: z.string().optional(),
   donorSource: z.string().optional(),

@@ -69,6 +69,24 @@ export function LoginPage({ onLogin }: Props) {
           </button>
         </form>
 
+        {import.meta.env.DEV && (
+          <details className="default-credentials">
+            <summary>Default login credentials</summary>
+            <table className="credentials-table">
+              <thead>
+                <tr><th>Email</th><th>Role</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>admin@dgc.gov.jm</td><td>System Admin</td></tr>
+                <tr><td>storekeeper@dgc.gov.jm</td><td>Storekeeper</td></tr>
+                <tr><td>approver@dgc.gov.jm</td><td>Approving Officer</td></tr>
+                <tr><td>finance@dgc.gov.jm</td><td>Finance Officer</td></tr>
+              </tbody>
+            </table>
+            <p className="credentials-password">Password: <code>ChangeMe123!</code></p>
+          </details>
+        )}
+
         <div className="login-footer">
           <div className="security-pill">MFA protected | Full audit trail | Segregation of duties</div>
         </div>

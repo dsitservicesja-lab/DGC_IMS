@@ -230,13 +230,18 @@ function UserForm({ user, onSaved, onCancel }: { user: User | null; onSaved: () 
     setError(null);
     try {
       if (user) {
-        await apiClient.put(`/users/${user.id}`, {
+        const payload: Record<string, unknown> = {
+          employeeId: form.employeeId,
           name: form.name,
           email: form.email,
           role: form.role,
           department: form.department,
           approvalLevel: form.approvalLevel
-        });
+        };
+        if (form.password) {
+          payload.password = form.password;
+        }
+        await apiClient.put(`/users/${user.id}`, payload);
         toast.add("User updated", "success");
       } else {
         await apiClient.post("/users", form);
@@ -261,12 +266,10 @@ function UserForm({ user, onSaved, onCancel }: { user: User | null; onSaved: () 
         <form onSubmit={handleSubmit} className="modal-form">
           {error && <div className="form-error">{error}</div>}
 
-          {!user && (
-            <div className="form-group">
-              <label htmlFor="uf-eid">Employee ID</label>
-              <input id="uf-eid" value={form.employeeId} onChange={(e) => set("employeeId", e.target.value)} required />
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="uf-eid">Employee ID</label>
+            <input id="uf-eid" value={form.employeeId} onChange={(e) => set("employeeId", e.target.value)} required />
+          </div>
 
           <div className="form-group">
             <label htmlFor="uf-name">Full Name</label>
@@ -278,12 +281,10 @@ function UserForm({ user, onSaved, onCancel }: { user: User | null; onSaved: () 
             <input id="uf-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
           </div>
 
-          {!user && (
-            <div className="form-group">
-              <label htmlFor="uf-pw">Password (min 8 characters)</label>
-              <input id="uf-pw" type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required minLength={8} />
-            </div>
-          )}
+          <div className="form-group">
+            <label htmlFor="uf-pw">{user ? "Password (leave blank to keep current)" : "Password (min 8 characters)"}</label>
+            <input id="uf-pw" type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required={!user} minLength={8} />
+          </div>
 
           <div className="form-group">
             <label htmlFor="uf-role">Role</label>

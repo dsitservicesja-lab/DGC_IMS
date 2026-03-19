@@ -16,8 +16,8 @@ echo "[*] Pulling latest code from GitHub..."
 git pull origin main
 
 # Rebuild and restart
-echo "[*] Rebuilding Docker images..."
-docker compose build
+echo "[*] Rebuilding Docker images (no cache)..."
+docker compose build --no-cache
 
 # Update port if needed
 sed -i "s/- \"8080:80\"/- \"${CUSTOM_PORT}:80\"/g" docker-compose.yml 2>/dev/null || true

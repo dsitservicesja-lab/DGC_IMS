@@ -26,6 +26,10 @@ export function requireRoles(roles: UserRole[]) {
     if (!req.user) {
       return next(new AppError("Authentication required", 401));
     }
+    // SYSTEM_ADMIN has unrestricted access to all endpoints
+    if (req.user.role === UserRole.SYSTEM_ADMIN) {
+      return next();
+    }
     if (!roles.includes(req.user.role)) {
       return next(new AppError("Forbidden", 403));
     }

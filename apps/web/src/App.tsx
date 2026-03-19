@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { Component, useEffect, useMemo, useState } from "react";
 import { KpiCard } from "./components/KpiCard";
 import { DataTable } from "./components/DataTable";
 import { QuickActions } from "./components/QuickActions";
@@ -12,6 +12,40 @@ import { TransactionList } from "./components/TransactionList";
 import { ToastProvider, useToast } from "./components/Toast";
 import { LoginPage } from "./components/LoginPage";
 import { UserManagement } from "./components/UserManagement";
+
+/* ── Error Boundary ── catches render crashes so the page doesn't go blank ── */
+type EBProps = { children: React.ReactNode };
+type EBState = { error: Error | null };
+
+class ErrorBoundary extends Component<EBProps, EBState> {
+  state: EBState = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("ErrorBoundary caught:", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 40, color: "#fff", background: "#1a1a2e", minHeight: "100vh" }}>
+          <h1 style={{ color: "#ff6b6b" }}>Something went wrong</h1>
+          <pre style={{ whiteSpace: "pre-wrap", color: "#ccc" }}>{this.state.error.message}</pre>
+          <button
+            onClick={() => { this.setState({ error: null }); window.location.reload(); }}
+            style={{ marginTop: 16, padding: "10px 24px", fontSize: 16, cursor: "pointer" }}
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 type Kpis = {
   stockAccuracyPercent: number;
@@ -245,8 +279,10 @@ function AppContent() {
 
 export function App() {
   return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

@@ -17,8 +17,10 @@ const createUserSchema = z.object({
 });
 
 const updateUserSchema = z.object({
+  employeeId: z.string().min(1).optional(),
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
+  password: z.string().min(8).optional(),
   role: z.nativeEnum(UserRole).optional(),
   department: z.string().min(1).optional(),
   approvalLevel: z.number().int().min(1).max(5).optional(),
@@ -105,10 +107,29 @@ userRouter.post("/", requireRoles([UserRole.SYSTEM_ADMIN]), async (req, res, nex
 // PUT /api/users/:id - Update user (admin only)
 userRouter.put("/:id", requireRoles([UserRole.SYSTEM_ADMIN]), async (req, res, next) => {
   try {
-    const data = updateUserSchema.parse(req.body);
+    const { password, ...rest } = updateUserSchema.parse(req.body);
+
+    // Check uniqueness of employeeId/email if they are being changed
+    if (rest.employeeId || rest.email) {
+      const conditions = [];
+      if (rest.employeeId) conditions.push({ employeeId: rest.employeeId });
+      if (rest.email) conditions.push({ email: rest.email });
+      const existing = await prisma.user.findFirst({
+        where: { OR: conditions, NOT: { id: req.params.id as string } }
+      });
+      if (existing) {
+        throw new AppError("User with this email or employee ID already exists", 409);
+      }
+    }
+
+    const updateData: Record<string, unknown> = { ...rest };
+    if (password) {
+      updateData.passwordHash = await bcrypt.hash(password, 10);
+    }
+
     const user = await prisma.user.update({
       where: { id: req.params.id as string },
-      data,
+      data: updateData,
       select: {
         id: true,
         employeeId: true,

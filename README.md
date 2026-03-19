@@ -57,7 +57,18 @@ Detailed mapping is available in docs/compliance-mapping.md.
 
 The frontend uses `/api` by default. In local development Vite proxies `/api` to port 4000, and in Docker deployments the web container proxies `/api` to the API container.
 
-Seed login users are created in apps/api/prisma/seed.ts with password ChangeMe123!.
+### Default login credentials
+
+After seeding the database (`npm run db:seed`), four accounts are available:
+
+| Email | Role | Password |
+|---|---|---|
+| `admin@dgc.gov.jm` | System Admin | `ChangeMe123!` |
+| `storekeeper@dgc.gov.jm` | Storekeeper | `ChangeMe123!` |
+| `approver@dgc.gov.jm` | Approving Officer | `ChangeMe123!` |
+| `finance@dgc.gov.jm` | Finance Officer | `ChangeMe123!` |
+
+> **⚠️ Change all default passwords before deploying to production.**
 
 ## Deploy on your server
 

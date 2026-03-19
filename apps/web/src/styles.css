@@ -467,6 +467,49 @@ th {
   color: var(--text-secondary);
 }
 
+.default-credentials {
+  margin: 0 24px 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.default-credentials summary {
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+.credentials-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 0.78rem;
+}
+
+.credentials-table th,
+.credentials-table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.credentials-table th {
+  font-weight: 600;
+}
+
+.credentials-password {
+  text-align: center;
+  margin: 6px 0 0;
+}
+
+.credentials-password code {
+  background: rgba(22, 95, 86, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
 /* User bar */
 .user-bar {
   display: flex;

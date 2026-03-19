@@ -3,6 +3,7 @@ node_modules
 .env.*
 !.env.example
 dist
+*.tsbuildinfo
 coverage
 .vscode
 .DS_Store

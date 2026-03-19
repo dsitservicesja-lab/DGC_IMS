@@ -398,6 +398,146 @@ th {
   }
 }
 
+/* Login Page */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--bg-panel);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  width: min(420px, 95vw);
+  overflow: hidden;
+  animation: rise-in 560ms ease both;
+}
+
+.login-header {
+  background: linear-gradient(130deg, var(--bg-hero-start), var(--bg-hero-end));
+  color: #eaf4f1;
+  padding: 28px 24px 20px;
+  text-align: center;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 6px;
+  margin-bottom: 8px;
+}
+
+.login-header h1 {
+  margin: 6px 0;
+  font-size: 1.3rem;
+}
+
+.login-subtitle {
+  margin: 4px 0 0;
+  color: #b8d8d0;
+}
+
+.login-form {
+  padding: 24px;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+.login-footer {
+  padding: 0 24px 20px;
+  text-align: center;
+}
+
+.login-footer .security-pill {
+  margin: 0 auto;
+  font-size: 0.8rem;
+  background: rgba(22, 95, 86, 0.08);
+  border-color: rgba(22, 95, 86, 0.2);
+  color: var(--text-secondary);
+}
+
+/* User bar */
+.user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+}
+
+.user-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 120ms ease;
+}
+
+.btn-sm:hover {
+  background: #eef2f7;
+}
+
+.btn-logout {
+  border-color: var(--alert);
+  color: var(--alert);
+}
+
+.btn-logout:hover {
+  background: #ffeeed;
+}
+
+/* Role badges & status */
+.role-badge {
+  background: #e4edf3;
+  border: 1px solid #cad8e3;
+  color: #294153;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.status-active {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.status-inactive {
+  color: var(--alert);
+  font-weight: 600;
+}
+
+.action-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btns .btn-sm {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
 /* Toast Notification Styles */
 .toast-container {
   position: fixed;

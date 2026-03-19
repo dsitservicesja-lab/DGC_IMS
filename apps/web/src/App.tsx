@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KpiCard } from "./components/KpiCard";
 import { DataTable } from "./components/DataTable";
 import { QuickActions } from "./components/QuickActions";
@@ -10,6 +10,8 @@ import { AdjustmentForm } from "./components/AdjustmentForm";
 import { DisposalForm } from "./components/DisposalForm";
 import { TransactionList } from "./components/TransactionList";
 import { ToastProvider, useToast } from "./components/Toast";
+import { LoginPage } from "./components/LoginPage";
+import { UserManagement } from "./components/UserManagement";
 
 type Kpis = {
   stockAccuracyPercent: number;
@@ -43,10 +45,39 @@ const sampleAlerts = [
 
 type ActiveForm = "requisition" | "receiving" | "issue" | "transfer" | "adjustment" | "disposal" | null;
 
+type AuthUser = { id: string; name: string; role: string } | null;
+
 function AppContent() {
+  const [user, setUser] = useState<AuthUser>(null);
   const [kpis, setKpis] = useState<Kpis>(sampleKpis);
   const [activeForm, setActiveForm] = useState<ActiveForm>(null);
+  const [showUsers, setShowUsers] = useState(false);
   const toast = useToast();
+
+  // Restore session from localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const saved = localStorage.getItem("auth_user");
+    if (token && saved) {
+      try { setUser(JSON.parse(saved)); } catch { /* ignore */ }
+    }
+  }, []);
+
+  const handleLogin = (u: { id: string; name: string; role: string }, token: string) => {
+    localStorage.setItem("auth_token", token);
+    localStorage.setItem("auth_user", JSON.stringify(u));
+    setUser(u);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+    setUser(null);
+  };
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   const kpiCards = useMemo(
     () => [
@@ -86,6 +117,16 @@ function AppContent() {
         </div>
         <div className="security-pill">MFA protected | Full audit trail | Segregation of duties</div>
       </header>
+
+      <div className="user-bar">
+        <span>Signed in as <strong>{user.name}</strong> ({user.role.replace(/_/g, " ")})</span>
+        <div className="user-bar-actions">
+          {user.role === "SYSTEM_ADMIN" && (
+            <button className="btn-sm" onClick={() => setShowUsers(true)}>👥 Manage Users</button>
+          )}
+          <button className="btn-sm btn-logout" onClick={handleLogout}>Sign Out</button>
+        </div>
+      </div>
 
       <div className="quick-actions">
         <button
@@ -196,6 +237,8 @@ function AppContent() {
           onCancel={() => setActiveForm(null)}
         />
       )}
+
+      {showUsers && <UserManagement onClose={() => setShowUsers(false)} />}
     </div>
   );
 }

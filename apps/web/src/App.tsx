@@ -109,10 +109,6 @@ function AppContent() {
     setUser(null);
   };
 
-  if (!user) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   const kpiCards = useMemo(
     () => [
       { title: "Stock Accuracy", value: `${kpis.stockAccuracyPercent}%`, subtitle: "Target >= 98%" },
@@ -124,6 +120,10 @@ function AppContent() {
     ],
     [kpis]
   );
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   const onRefresh = () => {
     setKpis((previous) => ({

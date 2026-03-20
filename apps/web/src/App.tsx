@@ -12,6 +12,7 @@ import { TransactionList } from "./components/TransactionList";
 import { ToastProvider, useToast } from "./components/Toast";
 import { LoginPage } from "./components/LoginPage";
 import { UserManagement } from "./components/UserManagement";
+import { ResetPasswordPage } from "./components/ResetPasswordPage";
 
 /* ── Error Boundary ── catches render crashes so the page doesn't go blank ── */
 type EBProps = { children: React.ReactNode };
@@ -120,6 +121,19 @@ function AppContent() {
     ],
     [kpis]
   );
+
+  // Handle /reset-password?token=... URL
+  const params = new URLSearchParams(window.location.search);
+  const resetToken = window.location.pathname === "/reset-password" ? params.get("token") : null;
+
+  if (resetToken) {
+    return (
+      <ResetPasswordPage
+        token={resetToken}
+        onDone={() => { window.history.replaceState({}, "", "/"); window.location.reload(); }}
+      />
+    );
+  }
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;

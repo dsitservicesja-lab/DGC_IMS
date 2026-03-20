@@ -16,6 +16,21 @@ echo "[*] Pulling latest code from GitHub..."
 git reset --hard HEAD
 git pull origin main
 
+# Ensure .env exists with all keys from .env.example
+if [ ! -f .env ]; then
+  cp .env.example .env
+  echo "[*] Created .env from .env.example"
+else
+  # Add any new keys from .env.example that are missing in .env
+  while IFS= read -r line; do
+    key="${line%%=*}"
+    if [[ -n "$key" && "$key" != \#* && ! "$key" =~ ^[[:space:]]$ ]]; then
+      grep -q "^${key}=" .env 2>/dev/null || echo "$line" >> .env
+    fi
+  done < .env.example
+  echo "[*] .env updated with any new keys"
+fi
+
 # Rebuild and restart
 echo "[*] Rebuilding Docker images (no cache)..."
 docker compose build --no-cache

@@ -10,6 +10,11 @@ export function LoginPage({ onLogin }: Props) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +29,80 @@ export function LoginPage({ onLogin }: Props) {
       setLoading(false);
     }
   };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError(null);
+    try {
+      await apiClient.post("/auth/forgot-password", { email: forgotEmail });
+      setForgotSent(true);
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  if (showForgot) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <div className="login-header">
+            <img src="/logo (2).png" alt="DGC logo" className="login-logo" />
+            <p className="eyebrow">Department of Government Chemist</p>
+            <h1>Forgot Password</h1>
+            <p className="login-subtitle">Enter your email to receive a reset link</p>
+          </div>
+
+          {forgotSent ? (
+            <div className="login-form">
+              <div className="form-success">
+                If that email is registered, a password reset link has been sent.
+                Please check your inbox.
+              </div>
+              <button
+                type="button"
+                className="btn-primary login-btn"
+                onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}
+              >
+                Back to Sign In
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="login-form">
+              {forgotError && <div className="form-error">{forgotError}</div>}
+              <div className="form-group">
+                <label htmlFor="forgot-email">Email Address</label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="you@dgc.gov.jm"
+                  required
+                  autoFocus
+                />
+              </div>
+              <button type="submit" className="btn-primary login-btn" disabled={forgotLoading}>
+                {forgotLoading ? "Sending..." : "Send Reset Link"}
+              </button>
+            </form>
+          )}
+
+          <div className="login-footer">
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => { setShowForgot(false); setForgotError(null); setForgotSent(false); }}
+            >
+              &larr; Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">
@@ -67,25 +146,13 @@ export function LoginPage({ onLogin }: Props) {
           <button type="submit" className="btn-primary login-btn" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
-        </form>
 
-        {import.meta.env.DEV && (
-          <details className="default-credentials">
-            <summary>Default login credentials</summary>
-            <table className="credentials-table">
-              <thead>
-                <tr><th>Email</th><th>Role</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>admin@dgc.gov.jm</td><td>System Admin</td></tr>
-                <tr><td>storekeeper@dgc.gov.jm</td><td>Storekeeper</td></tr>
-                <tr><td>approver@dgc.gov.jm</td><td>Approving Officer</td></tr>
-                <tr><td>finance@dgc.gov.jm</td><td>Finance Officer</td></tr>
-              </tbody>
-            </table>
-            <p className="credentials-password">Password: <code>ChangeMe123!</code></p>
-          </details>
-        )}
+          <div className="forgot-link">
+            <button type="button" className="link-btn" onClick={() => setShowForgot(true)}>
+              Forgot your password?
+            </button>
+          </div>
+        </form>
 
         <div className="login-footer">
           <div className="security-pill">MFA protected | Full audit trail | Segregation of duties</div>

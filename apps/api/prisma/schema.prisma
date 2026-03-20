@@ -147,6 +147,7 @@ model User {
   createdRequisitions Requisition[] @relation("RequisitionRequester")
   approvedRequisitions Requisition[] @relation("RequisitionApprover")
   auditLogs AuditLog[]
+  passwordResets PasswordReset[]
 }
 
 model Location {
@@ -405,4 +406,15 @@ model DocumentRecord {
   approvedBy       String?
   immutableHash    String
   createdAt        DateTime     @default(now())
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
 }

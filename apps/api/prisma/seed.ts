@@ -34,7 +34,7 @@ async function main() {
   });
 
   const roles = [
-    { employeeId: "EMP-0001", name: "System Admin", role: UserRole.SYSTEM_ADMIN, email: "admin@dgc.gov.jm" },
+    { employeeId: "EMP-0001", name: "System Admin", role: UserRole.SYSTEM_ADMIN, email: "demario.ewan@moh.gov.jm" },
     { employeeId: "EMP-0002", name: "Storekeeper", role: UserRole.STOREKEEPER, email: "storekeeper@dgc.gov.jm" },
     { employeeId: "EMP-0003", name: "Approver", role: UserRole.APPROVING_OFFICER, email: "approver@dgc.gov.jm" },
     { employeeId: "EMP-0004", name: "Finance", role: UserRole.FINANCE_OFFICER, email: "finance@dgc.gov.jm" }

@@ -11,8 +11,9 @@ echo "════════════════════════�
 echo "  DGC IMS Quick Update"
 echo "════════════════════════════════════════════"
 
-# Pull latest code
+# Pull latest code (reset any local edits so pull never fails)
 echo "[*] Pulling latest code from GitHub..."
+git reset --hard HEAD
 git pull origin main
 
 # Rebuild and restart
